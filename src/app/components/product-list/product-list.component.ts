@@ -1,13 +1,13 @@
 import { Component } from '@angular/core';
 import { ProductService } from '../../services/product.service';
 import { Product } from '../../common/product';
-import { CurrencyPipe, NgForOf } from '@angular/common';
+import { CurrencyPipe, NgForOf, NgIf } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'app-product-list',
   standalone: true,
-  imports: [NgForOf, CurrencyPipe],
+  imports: [NgForOf, CurrencyPipe, NgIf],
   templateUrl: './product-list.component.html',
   styleUrl: './product-list.component.css',
 })
