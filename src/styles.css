@@ -576,6 +576,14 @@ input.au-input.au-input-xl {
   color: #585858;
 }
 
+.detail-section {
+  margin-top: 60px;
+}
+
+.detail-img {
+  width: 30%;
+}
+
 /* 
  * ----------------------------
  * Shopping Cart Checkout
