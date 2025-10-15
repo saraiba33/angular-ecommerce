@@ -20,6 +20,7 @@ export class ProductListComponent {
   thePageNumber: number = 1;
   thePageSize: number = 5;
   theTotalElements: number = 0;
+  previousKeyword: string = '';
 
   constructor(
     private productService: ProductService,
@@ -63,21 +64,34 @@ export class ProductListComponent {
         this.thePageSize,
         this.currentCategoryId
       )
-      .subscribe((data) => {
-        this.products = data._embedded.products;
-        this.thePageNumber = data.page.number + 1;
-        this.thePageSize = data.page.size;
-        this.theTotalElements = data.page.totalElements;
-      });
+      .subscribe(this.productResult());
   }
 
   handleSearchProducts() {
     const theKeyword = this.route.snapshot.paramMap.get('keyword')!;
+
+    if (this.previousKeyword != theKeyword) {
+      this.thePageNumber = 1;
+    }
+
+    this.previousKeyword = theKeyword;
+
     this.productService
-      .searchProducts(theKeyword)
-      .subscribe((data: Product[]) => {
-        this.products = data;
-      });
+      .searchProductListPaginate(
+        this.thePageNumber - 1,
+        this.thePageSize,
+        theKeyword
+      )
+      .subscribe(this.productResult());
+  }
+
+  productResult() {
+    return (data: any) => {
+      this.products = data._embedded.products;
+      this.thePageNumber = data.page.number + 1;
+      this.thePageSize = data.page.size;
+      this.theTotalElements = data.page.totalElements;
+    };
   }
 
   updatePageSize(pageSize: string) {
