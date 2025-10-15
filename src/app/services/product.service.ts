@@ -29,18 +29,38 @@ export class ProductService {
     return this.getProducts(searchUrl);
   }
 
-  private getProducts(searchURl: string) {
+  private getProducts(searchUrl: string) {
     return this.httpClient
-      .get<GetResponseProducts>(searchURl)
+      .get<GetResponseProducts>(searchUrl)
       .pipe(
         map((response: GetResponseProducts) => response._embedded.products)
       );
   }
+
+  getProduct(theProductId: number): Observable<Product> {
+    const searchUrl = `${this.baseUrl}/${theProductId}`;
+    return this.httpClient.get<Product>(searchUrl);
+  }
+
+  getProductListPaginate(
+    thePage: number,
+    thePageSize: number,
+    theCategoryId: number
+  ): Observable<GetResponseProducts> {
+    const url = `${this.baseUrl}/search/findByCategoryId?id=${theCategoryId}&page=${thePage}&size=${thePageSize}`;
+    return this, this.httpClient.get<GetResponseProducts>(url);
+  }
 }
 
-interface GetResponseProducts {
+export interface GetResponseProducts {
   _embedded: {
     products: Product[];
+  };
+  page: {
+    size: number;
+    totalElements: number;
+    totalPages: number;
+    number: number;
   };
 }
 
