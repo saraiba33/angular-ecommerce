@@ -3,6 +3,8 @@ import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { first } from 'rxjs';
 import { FormService } from '../../services/form.service';
+import { Country } from '../../common/country';
+import { State } from '../../common/state';
 
 @Component({
   selector: 'app-checkout',
@@ -18,6 +20,10 @@ export class CheckoutComponent {
   totalQuantity: number = 0;
   monthsList: number[] = [];
   yearsList: number[] = [];
+  countries: Country[] = [];
+  states: State[] = [];
+  shippingAddressStates: State[] = [];
+  billingAddressStates: State[] = [];
 
   constructor(
     private formBuilder: FormBuilder,
@@ -62,6 +68,31 @@ export class CheckoutComponent {
 
     this.formService.getCreditCardYears().subscribe((data) => {
       this.yearsList = data;
+    });
+
+    this.formService.getCountries().subscribe((data) => {
+      this.countries = data;
+    });
+
+    this.formService
+      .getStates(this.checkoutFormGroup.value.billingAddress.country)
+      .subscribe((data) => {
+        this.states = data;
+      });
+  }
+
+  getStates(formGroupName: string) {
+    const formGroup = this.checkoutFormGroup.get(formGroupName);
+    const countryCode = formGroup?.value.country.code;
+    const countryName = formGroup?.value.country.name;
+
+    this.formService.getStates(countryCode).subscribe((data) => {
+      if (formGroupName === 'shippingAddress') {
+        this.shippingAddressStates = data;
+      } else {
+        this.billingAddressStates = data;
+      }
+      formGroup?.get('state')?.setValue(data[0]);
     });
   }
 
