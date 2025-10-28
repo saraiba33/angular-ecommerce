@@ -1,6 +1,12 @@
-import { CurrencyPipe, NgForOf } from '@angular/common';
+import { CurrencyPipe, NgForOf, NgIf } from '@angular/common';
 import { Component } from '@angular/core';
-import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import {
+  FormBuilder,
+  FormControl,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { first } from 'rxjs';
 import { FormService } from '../../services/form.service';
 import { Country } from '../../common/country';
@@ -9,7 +15,7 @@ import { State } from '../../common/state';
 @Component({
   selector: 'app-checkout',
   standalone: true,
-  imports: [ReactiveFormsModule, CurrencyPipe, NgForOf],
+  imports: [ReactiveFormsModule, CurrencyPipe, NgForOf, NgIf],
   templateUrl: './checkout.component.html',
   styleUrl: './checkout.component.css',
 })
@@ -33,9 +39,18 @@ export class CheckoutComponent {
   ngOnInit(): void {
     this.checkoutFormGroup = this.formBuilder.group({
       customer: this.formBuilder.group({
-        firstName: [''],
-        lastName: [''],
-        email: [''],
+        firstName: new FormControl('', [
+          Validators.required,
+          Validators.minLength(2),
+        ]),
+        lastName: new FormControl('', [
+          Validators.required,
+          Validators.minLength(2),
+        ]),
+        email: new FormControl('', [
+          Validators.required,
+          Validators.pattern('^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,20}$'),
+        ]),
       }),
       shippingAddress: this.formBuilder.group({
         street: [''],
@@ -101,13 +116,26 @@ export class CheckoutComponent {
     console.log(this.checkoutFormGroup.get('customer')?.value);
   }
 
+  get firstName() {
+    return this.checkoutFormGroup.get('customer.firstName');
+  }
+  get lastName() {
+    return this.checkoutFormGroup.get('customer.lastName');
+  }
+
+  get email() {
+    return this.checkoutFormGroup.get('customer.email');
+  }
+
   copyShippingAddressToBillingAddress(event: any) {
     if (event.target.checked) {
       this.checkoutFormGroup.controls['billingAddress'].setValue(
         this.checkoutFormGroup.controls['shippingAddress'].value
       );
+      this.billingAddressStates = this.shippingAddressStates;
     } else {
       this.checkoutFormGroup.controls['billingAddress'].reset();
+      this.billingAddressStates = [];
     }
   }
 }
