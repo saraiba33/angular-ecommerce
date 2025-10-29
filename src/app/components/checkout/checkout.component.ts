@@ -12,6 +12,7 @@ import { FormService } from '../../services/form.service';
 import { Country } from '../../common/country';
 import { State } from '../../common/state';
 import { FormValidators } from '../../validators/form-validators';
+import { CartService } from '../../services/cart.service';
 
 @Component({
   selector: 'app-checkout',
@@ -33,11 +34,14 @@ export class CheckoutComponent {
   billingAddressStates: State[] = [];
 
   constructor(
+    private cartService: CartService,
     private formBuilder: FormBuilder,
     private formService: FormService
   ) {}
 
   ngOnInit(): void {
+    this.reviewCartDetails();
+
     this.checkoutFormGroup = this.formBuilder.group({
       customer: this.formBuilder.group({
         firstName: new FormControl('', [
@@ -228,5 +232,14 @@ export class CheckoutComponent {
       this.checkoutFormGroup.controls['billingAddress'].reset();
       this.billingAddressStates = [];
     }
+  }
+
+  reviewCartDetails() {
+    this.cartService.totalQuantity.subscribe(
+      (totalQuantity) => (this.totalQuantity = totalQuantity)
+    );
+    this.cartService.totalPrice.subscribe(
+      (totalPrice) => (this.totalPrice = totalPrice)
+    );
   }
 }
