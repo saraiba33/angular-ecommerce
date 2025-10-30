@@ -7,12 +7,16 @@ import {
   ReactiveFormsModule,
   Validators,
 } from '@angular/forms';
-import { first } from 'rxjs';
 import { FormService } from '../../services/form.service';
 import { Country } from '../../common/country';
 import { State } from '../../common/state';
 import { FormValidators } from '../../validators/form-validators';
 import { CartService } from '../../services/cart.service';
+import { CheckoutService } from '../../services/checkout.service';
+import { Router } from '@angular/router';
+import { Order } from '../../common/order';
+import { OrderItem } from '../../common/order-item';
+import { Purchase } from '../../common/purcahse';
 
 @Component({
   selector: 'app-checkout',
@@ -36,7 +40,9 @@ export class CheckoutComponent {
   constructor(
     private cartService: CartService,
     private formBuilder: FormBuilder,
-    private formService: FormService
+    private formService: FormService,
+    private checkoutService: CheckoutService,
+    private router: Router
   ) {}
 
   ngOnInit(): void {
@@ -98,7 +104,7 @@ export class CheckoutComponent {
         country: new FormControl('', [Validators.required]),
       }),
       creditCard: this.formBuilder.group({
-        cardtType: new FormControl('', [Validators.required]),
+        cardType: new FormControl('', [Validators.required]),
         nameOnCard: new FormControl('', [
           Validators.required,
           Validators.minLength(2),
@@ -153,12 +159,57 @@ export class CheckoutComponent {
   }
 
   onSubmit() {
-    console.log('Handling the submit button');
-    console.log(this.checkoutFormGroup.get('customer')?.value);
-
     if (this.checkoutFormGroup.invalid) {
       this.checkoutFormGroup.markAllAsTouched();
+      return;
     }
+
+    let order = new Order();
+    order.totalPrice = this.totalPrice;
+    order.totalQuantity = this.totalQuantity;
+
+    const cartItems = this.cartService.cartItems;
+
+    let orderItems: OrderItem[] = cartItems.map((item) => new OrderItem(item));
+    console.log(orderItems);
+    let purchase = new Purchase(
+      this.checkoutFormGroup.controls['customer'].value,
+      this.checkoutFormGroup.controls['shippingAddress'].value,
+      this.checkoutFormGroup.controls['billingAddress'].value,
+      order,
+      orderItems
+    );
+
+    const shippingState: State = JSON.parse(
+      JSON.stringify(purchase.shippingAddress.state)
+    );
+    const shippingCountry: Country = JSON.parse(
+      JSON.stringify(purchase.shippingAddress.country)
+    );
+    purchase.shippingAddress.state = shippingState.name;
+    purchase.shippingAddress.country = shippingCountry.name;
+
+    const billingState: State = JSON.parse(
+      JSON.stringify(purchase.shippingAddress.state)
+    );
+    const billingCountry: Country = JSON.parse(
+      JSON.stringify(purchase.shippingAddress.country)
+    );
+    purchase.billingAddress.state = billingState.name;
+    purchase.billingAddress.country = billingCountry.name;
+
+    this.checkoutService.placeOrder(purchase).subscribe({
+      next: (response) => {
+        alert(
+          `Your order has been received. \nOrder tracking number: ${response.orderTrackingNumber}`
+        );
+
+        this.resetCart();
+      },
+      error: (err) => {
+        alert(`There was an error: ${err.message}`);
+      },
+    });
   }
 
   get firstName() {
@@ -204,7 +255,7 @@ export class CheckoutComponent {
   }
 
   get creditCardType() {
-    return this.checkoutFormGroup.get('creditCard.type');
+    return this.checkoutFormGroup.get('creditCard.cardType');
   }
   get creditCardNameOnCard() {
     return this.checkoutFormGroup.get('creditCard.nameOnCard');
@@ -241,5 +292,14 @@ export class CheckoutComponent {
     this.cartService.totalPrice.subscribe(
       (totalPrice) => (this.totalPrice = totalPrice)
     );
+  }
+
+  resetCart() {
+    this.cartService.cartItems = [];
+    this.cartService.totalPrice.next(0);
+    this.cartService.totalQuantity.next(0);
+
+    this.checkoutFormGroup.reset();
+    this.router.navigateByUrl('/products');
   }
 }
